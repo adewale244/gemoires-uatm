@@ -92,28 +92,23 @@
         <div class="flex gap-0 h-full">
 
             <!-- PDF Viewer -->
-            <div class="flex-1 flex flex-col" style="height: calc(100vh - 73px)">
-                <?php if($memoire['url_fichier'] && strtolower(pathinfo($memoire['url_fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
-                <div id="pdf-wrap" class="flex-1 relative bg-gray-800">
-                    <!-- Overlay anti-téléchargement -->
-                    <div style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;pointer-events:none;"></div>
-                    <iframe
-                        src="<?= APP_URL ?>/memoires/pdf/<?= urlencode($memoire['url_fichier']) ?>#toolbar=0&navpanes=0&scrollbar=1"
-                        class="w-full h-full"
-                        style="height: calc(100vh - 73px)"
-                        sandbox="allow-same-origin allow-scripts"
-                    ></iframe>
-                </div>
-                <?php else: ?>
-                <div class="flex-1 flex items-center justify-center bg-gray-100">
-                    <div class="text-center">
-                        <div class="text-6xl mb-4">📄</div>
-                        <p class="text-gray-500">Aperçu non disponible pour ce format.</p>
-                        <p class="text-gray-400 text-sm mt-1">Format : <?= strtoupper(pathinfo($memoire['url_fichier'], PATHINFO_EXTENSION)) ?></p>
-                    </div>
-                </div>
-                <?php endif; ?>
-            </div>
+            <?php if($memoire['url_fichier'] && strtolower(pathinfo($memoire['url_fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
+<div id="pdf-wrap" class="flex-1 relative bg-gray-800" style="height: calc(100vh - 73px)">
+    <canvas id="pdf-canvas" class="mx-auto block"></canvas>
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white rounded-xl px-4 py-2 shadow-lg">
+        <button onclick="prevPage()" class="text-blue-900 font-bold px-3 py-1 hover:bg-gray-100 rounded-lg">←</button>
+        <span class="text-sm text-gray-600">Page <span id="page-num">1</span> / <span id="page-total">?</span></span>
+        <button onclick="nextPage()" class="text-blue-900 font-bold px-3 py-1 hover:bg-gray-100 rounded-lg">→</button>
+    </div>
+</div>
+<?php else: ?>
+<div class="flex-1 flex items-center justify-center bg-gray-100">
+    <div class="text-center">
+        <div class="text-6xl mb-4">📄</div>
+        <p class="text-gray-500">Aperçu non disponible pour ce format.</p>
+    </div>
+</div>
+<?php endif; ?>
 
             <!-- Panneau latéral -->
             <div class="w-80 flex-shrink-0 border-l border-gray-200 bg-white flex flex-col" style="height: calc(100vh - 73px)">
@@ -197,17 +192,53 @@
     </main>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-    // Bloquer clic droit sur le PDF
-    document.addEventListener('contextmenu', function(e) {
-        if (e.target.tagName === 'IFRAME') e.preventDefault();
-    });
-    // Bloquer Ctrl+S, Ctrl+P
-    document.addEventListener('keydown', function(e) {
+    // Bloquer clic droit et raccourcis
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
         if ((e.ctrlKey || e.metaKey) && ['s','p','u'].includes(e.key.toLowerCase())) {
             e.preventDefault();
         }
     });
+
+    // PDF.js
+    const pdfUrl = '<?= APP_URL ?>/memoires/pdf/<?= urlencode($memoire['url_fichier']) ?>';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let pdfDoc = null;
+    let currentPage = 1;
+
+    function renderPage(num) {
+        pdfDoc.getPage(num).then(page => {
+            const canvas = document.getElementById('pdf-canvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('pdf-wrap');
+            const viewport = page.getViewport({ scale: container.clientWidth / page.getViewport({scale:1}).width });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            page.render({ canvasContext: ctx, viewport });
+            document.getElementById('page-num').textContent = num;
+        });
+    }
+
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+        pdfDoc = pdf;
+        document.getElementById('page-total').textContent = pdf.numPages;
+        renderPage(currentPage);
+    });
+
+    function prevPage() {
+        if (currentPage <= 1) return;
+        currentPage--;
+        renderPage(currentPage);
+    }
+
+    function nextPage() {
+        if (currentPage >= pdfDoc.numPages) return;
+        currentPage++;
+        renderPage(currentPage);
+    }
 </script>
 </body>
 </html>
