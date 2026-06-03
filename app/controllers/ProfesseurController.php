@@ -49,13 +49,11 @@ class ProfesseurController extends Controller {
 
         $db = Database::getInstance();
 
-        // Récupérer le mémoire
         $memoire = $db->findOne("SELECT * FROM memoires WHERE id = ?", [$id]);
         if (!$memoire) {
             $this->redirect('professeur/dashboard');
         }
 
-        // Mettre à jour le statut
         $statut = $decision === 'approuve' ? 'valide' :
                  ($decision === 'rejete' ? 'rejete' : 'correction');
 
@@ -64,14 +62,12 @@ class ProfesseurController extends Controller {
             [$statut, $id]
         );
 
-        // Enregistrer dans workflow
         $db->query(
             "INSERT INTO workflow (id_memoire, id_acteur, etape, decision, commentaire)
              VALUES (?, ?, 'validation_prof', ?, ?)",
             [$id, $_SESSION['user_id'], $decision, $commentaire]
         );
 
-        // Notifier l'étudiant
         $msg = match($decision) {
             'approuve'   => "🎉 Votre mémoire \"{$memoire['titre']}\" a été validé et est maintenant disponible sur la plateforme !",
             'rejete'     => "❌ Votre mémoire \"{$memoire['titre']}\" a été rejeté. Motif : $commentaire",
@@ -82,6 +78,28 @@ class ProfesseurController extends Controller {
             "INSERT INTO notifications (id_destinataire, message) VALUES (?, ?)",
             [$memoire['id_etudiant'], $msg]
         );
+
+        // Récupérer infos étudiant
+        $etudiant = $db->findOne(
+            "SELECT * FROM utilisateurs WHERE id = ?",
+            [$memoire['id_etudiant']]
+        );
+
+        // Envoyer email
+        if ($etudiant) {
+            require_once 'app/core/Mailer.php';
+            $sujet = match($decision) {
+                'approuve'   => "✅ Votre mémoire a été validé — GéMoires UATM",
+                'rejete'     => "❌ Votre mémoire a été rejeté — GéMoires UATM",
+                'correction' => "⚠️ Corrections demandées — GéMoires UATM",
+            };
+            Mailer::send(
+                $etudiant['email'],
+                $etudiant['prenom'] . ' ' . $etudiant['nom'],
+                $sujet,
+                $msg
+            );
+        }
 
         $this->redirect('professeur/dashboard');
     }
