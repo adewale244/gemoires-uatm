@@ -74,5 +74,48 @@ class AdminController extends Controller {
     ];
 
     $this->view('admin/stats', $data);
+}public function signalements() {
+    $this->requireLogin();
+    if (!in_array($_SESSION['role'], [ROLE_ADMIN, ROLE_DIRECTEUR])) {
+        $this->redirect('memoires/index');
+    }
+
+    $db = Database::getInstance();
+    $signalements = $db->findAll(
+        "SELECT s.*, 
+                u.nom as signaleur_nom, u.prenom as signaleur_prenom,
+                c.contenu as commentaire_contenu,
+                cu.nom as auteur_nom, cu.prenom as auteur_prenom
+         FROM signalements s
+         LEFT JOIN utilisateurs u ON s.id_user = u.id
+         LEFT JOIN commentaires c ON s.id_commentaire = c.id
+         LEFT JOIN utilisateurs cu ON c.id_user = cu.id
+         ORDER BY s.date_signalement DESC"
+    );
+
+    $this->view('admin/signalements', ['signalements' => $signalements]);
+}
+
+public function traiterSignalement($id) {
+    $this->requireLogin();
+    if (!in_array($_SESSION['role'], [ROLE_ADMIN, ROLE_DIRECTEUR])) {
+        $this->redirect('memoires/index');
+    }
+
+    $action = $_POST['action'] ?? '';
+    $db = Database::getInstance();
+
+    $signalement = $db->findOne("SELECT * FROM signalements WHERE id = ?", [$id]);
+
+    if ($action === 'supprimer') {
+        // Supprimer le commentaire
+        $db->query("DELETE FROM commentaires WHERE id = ?", [$signalement['id_commentaire']]);
+        $db->query("DELETE FROM signalements WHERE id_commentaire = ?", [$signalement['id_commentaire']]);
+    } else {
+        // Ignorer — juste marquer comme traité
+        $db->query("UPDATE signalements SET statut = 'traite' WHERE id = ?", [$id]);
+    }
+
+    $this->redirect('admin/signalements');
 }
 }
