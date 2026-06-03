@@ -267,5 +267,4 @@ Ce projet est à usage académique — UATM GASA Formation © 2025.
 <div align="center">
   <strong>GéMoires</strong> — Bibliothèque numérique académique UATM GASA
 </div>
-EOF
-echo "README créé avec succès"
+
