@@ -66,20 +66,23 @@
     <!-- CONTENU -->
     <main class="flex-1 overflow-y-auto">
 
-        <!-- Header -->
-        <div class="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-10">
-            <div class="flex items-center justify-between mb-3">
-                <div>
-                    <h2 class="text-gray-800 font-semibold text-lg">Bibliothèque des mémoires</h2>
-                    <p class="text-gray-400 text-xs"><?= count($memoires) ?> mémoire(s) disponible(s)</p>
-                </div>
-                <?php if(in_array($_SESSION['role'], ['diplome','directeur','admin'])): ?>
-                <a href="<?= APP_URL ?>/memoires/soumettre"
-                   class="bg-blue-900 hover:bg-yellow-500 hover:text-blue-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all">
-                    + Soumettre un mémoire
-                </a>
-                <?php endif; ?>
-            </div>
+       <!-- Header -->
+<div class="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-10">
+    <div class="flex items-center justify-between mb-3">
+        <div>
+            <h2 class="text-gray-800 font-semibold text-lg">Bibliothèque des mémoires</h2>
+            <p class="text-gray-400 text-xs"><?= count($memoires) ?> mémoire(s) disponible(s)</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <?php include 'views/partials/navbar.php'; ?>
+            <?php if(in_array($_SESSION['role'], ['diplome','directeur','admin'])): ?>
+            <a href="<?= APP_URL ?>/memoires/soumettre"
+               class="bg-blue-900 hover:bg-yellow-500 hover:text-blue-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all">
+                + Soumettre un mémoire
+            </a>
+            <?php endif; ?>
+        </div>
+    </div>
 
             <!-- Barre de recherche -->
             <form method="GET" action="<?= APP_URL ?>/memoires/index" class="flex gap-3 flex-wrap">

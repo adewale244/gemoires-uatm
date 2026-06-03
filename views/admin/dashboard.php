@@ -96,7 +96,7 @@
                 <p class="text-gray-400 text-xs"><?= date('l d F Y') ?></p>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">● Système actif</span>
+               <?php include 'views/partials/navbar.php'; ?>
             </div>
         </div>
 
