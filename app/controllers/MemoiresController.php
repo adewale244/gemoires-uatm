@@ -223,6 +223,21 @@ class MemoiresController extends Controller {
         }
         $this->redirect('memoires/voir/' . $id);
     }
+    // Mes favoris
+    public function favoris() {
+        $this->requireLogin();
+        $db = Database::getInstance();
+        $favoris = $db->findAll(
+            "SELECT m.*, u.nom, u.prenom, f.date_ajout
+             FROM favoris f
+             LEFT JOIN memoires m ON f.id_memoire = m.id
+             LEFT JOIN utilisateurs u ON m.id_etudiant = u.id
+             WHERE f.id_user = ?
+             ORDER BY f.date_ajout DESC",
+            [$_SESSION['user_id']]
+        );
+        $this->view('memoires/favoris', ['favoris' => $favoris]);
+    }
 
     // Servir le PDF sécurisé (sans téléchargement)
     public function pdf($filename) {
