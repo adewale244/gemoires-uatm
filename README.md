@@ -1,7 +1,3 @@
-# gemoires-uatm
-bash
-
-cat > /mnt/user-data/outputs/README.md << 'EOF'
 <div align="center">
 
 # 📚 GéMoires — UATM GASA Formation
